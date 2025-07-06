@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Recipe Hub - All Recipes</title>
+    <link rel="stylesheet" href="/css/styles.css">
+    <style>
+        body {
+            font-family: sans-serif;
+            margin: 2rem;
+            background-color: #f9f9f9;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+
+        th, td {
+            padding: 12px;
+            border-bottom: 1px solid #ccc;
+        }
+
+        th {
+            background-color: #eeeeee;
+        }
+
+        a.button {
+            background-color: #5a67d8;
+            color: white;
+            padding: 8px 12px;
+            text-decoration: none;
+            border-radius: 5px;
+        }
+
+        a.button:hover {
+            background-color: #434190;
+        }
+    </style>
+</head>
+<body>
+
+<h1>All Recipes</h1>
+
+<a class="button" href="/recipes/new">Add New Recipe</a>
+
+<table>
+    <thead>
+    <tr>
+        <th>Name</th>
+        <th>Category</th>
+        <th>Prep Time</th>
+        <th>Servings</th>
+        <th>Actions</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr th:each="recipe : ${recipes}">
+        <td th:text="${recipe.name}">Recipe name</td>
+        <td th:text="${recipe.category}">Category</td>
+        <td th:text="${recipe.prepTimeMinutes + ' min'}">30 min</td>
+        <td th:text="${recipe.servings}">4</td>
+        <td>
+            <a th:href="@{'/recipes/' + ${recipe.id}}" class="button">View</a>
+        </td>
+    </tr>
+    </tbody>
+</table>
+
+</body>
+</html>
