@@ -1,43 +1,171 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org" lang="en">
 <head>
-    <title>Add Recipe</title>
+    <title th:text="${recipeId != null} ? 'Edit recipe' : 'Add recipe'">Recipe form</title>
+
+    <!--  Minimalan stil; slobodno izbaci ako koristiš Tailwind ili svoj CSS  -->
     <style>
         body { font-family: sans-serif; margin: 2rem; background: #fafafa; }
+        form  { background: #fff; padding: 2rem; border-radius: 8px; box-shadow: 0 0 8px rgba(0,0,0,.05); max-width: 700px; }
         label { display: block; margin-top: 1rem; }
-        input, textarea { width: 300px; padding: 5px; }
-        .error { color: red; font-size: 0.9em; }
-        .ingredient-block { margin-top: 10px; border: 1px solid #ccc; padding: 10px; }
+        input, textarea { width: 100%; max-width: 400px; padding: 6px 8px; }
+        textarea { height: 80px; resize: vertical; }
+        .error { color: #d32f2f; font-size: 0.9em; }
+        .ingredient-block { margin-top: 1rem; padding: 1rem; border: 1px solid #ddd; border-radius: 6px; position: relative; }
+        .remove-btn { position: absolute; top: 6px; right: 6px; background: #d32f2f; color:#fff; border:none; border-radius:4px; padding:2px 6px; cursor:pointer; }
+        .add-btn, .save-btn, .back-btn { margin-top: 1.5rem; padding: 8px 14px; border:none; border-radius:6px; cursor:pointer; }
+        .add-btn  { background:#4caf50; color:#fff; }
+        .save-btn { background:#5a67d8; color:#fff; }
+        .back-btn { background:#888; color:#fff; text-decoration:none; display:inline-block; }
+        .add-btn:hover { background:#388e3c; }
+        .save-btn:hover{ background:#434190; }
+        .back-btn:hover{ background:#666; }
     </style>
+
+    <script>
+        function addIngredient() {
+            const container = document.querySelector('[id^="ingredients-container"]');
+            const index = container.children.length;
+            const div = document.createElement('div');
+            div.className = 'ingredient-block';
+
+            div.innerHTML = `
+            <button type="button" class="remove-btn" onclick="this.parentElement.remove()">✕</button>
+
+            <label>Name:
+                <input type="text" name="ingredients[${index}].name" required/>
+            </label>
+            <label>Quantity:
+                <input type="number" step="0.01" min="0.01" name="ingredients[${index}].quantity" required/>
+            </label>
+            <label>Unit:
+                <input type="text" name="ingredients[${index}].unit" required/>
+            </label>
+        `;
+            container.appendChild(div);
+        }
+    </script>
+
 </head>
 <body>
-<h1>Add Recipe</h1>
 
-<form th:action="@{/recipes}" th:object="${recipeForm}" method="post">
+<a href="/recipes" class="back-btn">← Back</a>
 
-    <label>Name: <input type="text" th:field="*{name}"/></label>
-    <div class="error" th:if="${#fields.hasErrors('name')}" th:errors="*{name}">Error</div>
+<!-- ----------  KREIRANJE  ---------- -->
+<div th:unless="${recipeId != null}">
+    <h1>Add recipe</h1>
+    <form th:action="@{/recipes}" th:object="${recipeForm}" method="post">
 
-    <label>Description:
-        <textarea th:field="*{description}"></textarea>
-    </label>
+        <!-- osnovna polja -->
+        <label>Name:
+            <input type="text" th:field="*{name}" />
+        </label>
+        <div class="error" th:errors="*{name}"></div>
 
-    <label>Prep Time (min): <input type="number" th:field="*{prepTimeMinutes}"/></label>
+        <label>Description:
+            <textarea th:field="*{description}"></textarea>
+        </label>
 
-    <label>Servings: <input type="number" th:field="*{servings}"/></label>
+        <label>Prep time (min):
+            <input type="number" th:field="*{prepTimeMinutes}" min="1"/>
+        </label>
 
-    <label>Category: <input type="text" th:field="*{category}"/></label>
+        <label>Servings:
+            <input type="number" th:field="*{servings}" min="1"/>
+        </label>
 
-    <div id="ingredients-container">
-        <div th:each="ingredient, iStat : *{ingredients}" class="ingredient-block">
-            <label>Name: <input th:field="*{ingredients[__${iStat.index}__].name}"/></label>
-            <label>Quantity: <input type="number" step="0.01" th:field="*{ingredients[__${iStat.index}__].quantity}"/></label>
-            <label>Unit: <input th:field="*{ingredients[__${iStat.index}__].unit}"/></label>
+        <label>Category:
+            <input type="text" th:field="*{category}"/>
+        </label>
+
+        <!-- sastojci -->
+        <h3>Ingredients</h3>
+        <div id="ingredients-container-create">
+            <!--  Ako forma tek kreirana – prikaži prazan blok za 1. sastojak  -->
+            <div class="ingredient-block" th:if="${#lists.isEmpty(recipeForm.ingredients)}">
+                <button type="button" class="remove-btn" onclick="this.parentElement.remove()">✕</button>
+
+                <label>Name:
+                    <input type="text" name="ingredients[0].name" required/>
+                </label>
+                <label>Quantity:
+                    <input type="number" step="0.01" min="0.01" name="ingredients[0].quantity" required/>
+                </label>
+                <label>Unit:
+                    <input type="text" name="ingredients[0].unit" required/>
+                </label>
+            </div>
+
+            <!--  Ako smo se vratili sa greškom ili editujemo – prikaži postojeće sastojke  -->
+            <div th:each="ing,stat : *{ingredients}" class="ingredient-block" th:unless="${#lists.isEmpty(recipeForm.ingredients)}">
+                <button type="button" class="remove-btn" onclick="this.parentElement.remove()">✕</button>
+
+                <label>Name:
+                    <input type="text" th:name="${'ingredients[' + stat.index + '].name'}" th:value="${ing.name}" required/>
+                </label>
+                <label>Quantity:
+                    <input type="number" step="0.01" min="0.01" th:name="${'ingredients[' + stat.index + '].quantity'}" th:value="${ing.quantity}" required/>
+                </label>
+                <label>Unit:
+                    <input type="text" th:name="${'ingredients[' + stat.index + '].unit'}" th:value="${ing.unit}" required/>
+                </label>
+            </div>
         </div>
-    </div>
 
-    <button type="submit">Save</button>
-</form>
+        <button type="button" class="add-btn" onclick="addIngredient()">+ Add ingredient</button>
+
+        <button type="submit" class="save-btn">Save</button>
+    </form>
+</div>
+
+<!-- ----------  IZMENA  ---------- -->
+<div th:if="${recipeId != null}">
+    <h1>Edit recipe</h1>
+    <form th:action="@{'/recipes/' + ${recipeId} + '/edit'}" th:object="${recipeForm}" method="post">
+
+        <label>Name:
+            <input type="text" th:field="*{name}" />
+        </label>
+        <div class="error" th:errors="*{name}"></div>
+
+        <label>Description:
+            <textarea th:field="*{description}"></textarea>
+        </label>
+
+        <label>Prep time (min):
+            <input type="number" th:field="*{prepTimeMinutes}" min="1"/>
+        </label>
+
+        <label>Servings:
+            <input type="number" th:field="*{servings}" min="1"/>
+        </label>
+
+        <label>Category:
+            <input type="text" th:field="*{category}"/>
+        </label>
+
+        <h3>Ingredients</h3>
+        <div id="ingredients-container-edit">
+            <div th:each="ing,stat : *{ingredients}" class="ingredient-block">
+                <button type="button" class="remove-btn" onclick="this.parentElement.remove()">✕</button>
+
+                <label>Name:
+                    <input type="text" th:name="${'ingredients[' + stat.index + '].name'}" th:value="${ing.name}" required/>
+                </label>
+                <label>Quantity:
+                    <input type="number" step="0.01" min="0.01" th:name="${'ingredients[' + stat.index + '].quantity'}" th:value="${ing.quantity}" required/>
+                </label>
+                <label>Unit:
+                    <input type="text" th:name="${'ingredients[' + stat.index + '].unit'}" th:value="${ing.unit}" required/>
+                </label>
+            </div>
+        </div>
+
+        <button type="button" class="add-btn" onclick="addIngredient()">+ Add ingredient</button>
+
+        <button type="submit" class="save-btn">Save</button>
+    </form>
+</div>
 
 </body>
 </html>

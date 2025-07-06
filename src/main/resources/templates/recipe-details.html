@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <title>Recipe Details</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            margin: 2rem;
+            background-color: #fefefe;
+        }
+
+        .card {
+            background: #fff;
+            border: 1px solid #ccc;
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.05);
+            max-width: 600px;
+            margin: auto;
+        }
+
+        h2 {
+            margin-top: 0;
+        }
+
+        ul {
+            padding-left: 1.2rem;
+        }
+
+        .back-link {
+            display: inline-block;
+            margin-top: 1rem;
+            color: #5a67d8;
+            text-decoration: none;
+        }
+
+        .back-link:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <h2 th:text="${recipe.name}">Recipe Name</h2>
+    <p><strong>Category:</strong> <span th:text="${recipe.category}">Glavno jelo</span></p>
+    <p><strong>Prep time:</strong> <span th:text="${recipe.prepTimeMinutes}">20</span> min</p>
+    <p><strong>Servings:</strong> <span th:text="${recipe.servings}">2</span></p>
+    <p><strong>Description:</strong></p>
+    <p th:text="${recipe.description}">Lorem ipsum description...</p>
+
+    <h3>Ingredients</h3>
+    <ul>
+        <li th:each="ingredient : ${recipe.ingredients}"
+            th:text="${ingredient.quantity + ' ' + ingredient.unit + ' ' + ingredient.name}">
+            100g slanina
+        </li>
+    </ul>
+
+    <a href="/recipes" class="back-link">← Back to all recipes</a>
+</div>
+
+</body>
+</html>

@@ -53,4 +53,23 @@ public class RecipeRepository {
     public void update(Recipe updatedRecipe) {
         recipeMap.put(updatedRecipe.getId(), updatedRecipe);
     }
+
+    public void deleteById(String id) {
+        recipeMap.remove(id);
+    }
+
+    public List<Recipe> search(String keyword) {
+        if (keyword == null || keyword.isBlank()) {
+            return findAll();
+        }
+
+        String lowerKeyword = keyword.toLowerCase();
+
+        return recipeMap.values().stream()
+                .filter(r -> r.getName().toLowerCase().contains(lowerKeyword)
+                        || r.getCategory().toLowerCase().contains(lowerKeyword))
+                .toList();
+    }
+
+
 }
