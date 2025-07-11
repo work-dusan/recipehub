@@ -43,7 +43,7 @@
 
 <div class="card">
     <h2 th:text="${recipe.name}">Recipe Name</h2>
-    <p><strong>Category:</strong> <span th:text="${recipe.category}">Glavno jelo</span></p>
+    <p><strong>Category:</strong> <span th:text="${recipe.category.name}">Glavno jelo</span></p>
     <p><strong>Prep time:</strong> <span th:text="${recipe.prepTimeMinutes}">20</span> min</p>
     <p><strong>Servings:</strong> <span th:text="${recipe.servings}">2</span></p>
     <p><strong>Description:</strong></p>
@@ -56,6 +56,24 @@
             100g slanina
         </li>
     </ul>
+
+    <h3>Tags</h3>
+    <ul>
+        <li th:each="tag : ${recipe.tags}"
+            th:text="${tag.name}">
+            Bez glutena
+        </li>
+        <li th:if="${#lists.isEmpty(recipe.tags)}">No tags</li>
+    </ul>
+
+    <h3>Instruction Steps</h3>
+    <ol>
+        <li th:each="step : ${recipe.instructionSteps}"
+            th:text="${step.description}">
+            Step description here
+        </li>
+        <li th:if="${#lists.isEmpty(recipe.instructionSteps)}">No instruction steps</li>
+    </ol>
 
     <a href="/recipes" class="back-link">← Back to all recipes</a>
 </div>

@@ -3,15 +3,16 @@
 <head>
     <title th:text="${recipeId != null} ? 'Edit recipe' : 'Add recipe'">Recipe form</title>
 
-    <!--  Minimalan stil; slobodno izbaci ako koristiš Tailwind ili svoj CSS  -->
     <style>
         body { font-family: sans-serif; margin: 2rem; background: #fafafa; }
         form  { background: #fff; padding: 2rem; border-radius: 8px; box-shadow: 0 0 8px rgba(0,0,0,.05); max-width: 700px; }
         label { display: block; margin-top: 1rem; }
-        input, textarea { width: 100%; max-width: 400px; padding: 6px 8px; }
+        input, textarea, select { width: 100%; max-width: 400px; padding: 6px 8px; }
         textarea { height: 80px; resize: vertical; }
         .error { color: #d32f2f; font-size: 0.9em; }
-        .ingredient-block { margin-top: 1rem; padding: 1rem; border: 1px solid #ddd; border-radius: 6px; position: relative; }
+        .ingredient-block, .step-block { margin-top: 1rem; padding: 1rem; border: 1px solid #ddd; border-radius: 6px; position: relative; }
+        .ingredient-block { border-color: #ccc; }
+        .step-block { border-color: #4caf50; }
         .remove-btn { position: absolute; top: 6px; right: 6px; background: #d32f2f; color:#fff; border:none; border-radius:4px; padding:2px 6px; cursor:pointer; }
         .add-btn, .save-btn, .back-btn { margin-top: 1.5rem; padding: 8px 14px; border:none; border-radius:6px; cursor:pointer; }
         .add-btn  { background:#4caf50; color:#fff; }
@@ -24,24 +25,42 @@
 
     <script>
         function addIngredient() {
-            const container = document.querySelector('[id^="ingredients-container"]');
+            const container = document.querySelector('.ingredients-container');
             const index = container.children.length;
             const div = document.createElement('div');
             div.className = 'ingredient-block';
 
             div.innerHTML = `
-            <button type="button" class="remove-btn" onclick="this.parentElement.remove()">✕</button>
+                <button type="button" class="remove-btn" onclick="this.parentElement.remove()">✕</button>
 
-            <label>Name:
-                <input type="text" name="ingredients[${index}].name" required/>
-            </label>
-            <label>Quantity:
-                <input type="number" step="0.01" min="0.01" name="ingredients[${index}].quantity" required/>
-            </label>
-            <label>Unit:
-                <input type="text" name="ingredients[${index}].unit" required/>
-            </label>
-        `;
+                <label>Name:
+                    <input type="text" name="ingredients[${index}].name" required/>
+                </label>
+                <label>Quantity:
+                    <input type="number" step="0.01" min="0.01" name="ingredients[${index}].quantity" required/>
+                </label>
+                <label>Unit:
+                    <input type="text" name="ingredients[${index}].unit" required/>
+                </label>
+            `;
+            container.appendChild(div);
+        }
+
+        function addStep() {
+            const container = document.querySelector('.steps-container');
+            const index = container.children.length;
+            const div = document.createElement('div');
+            div.className = 'step-block';
+
+            div.innerHTML = `
+                <button type="button" class="remove-btn" onclick="this.parentElement.remove()">✕</button>
+                <label>Step description:
+                    <textarea name="instructionSteps[${index}].description" required></textarea>
+                </label>
+                <label>Step order:
+                    <input type="number" name="instructionSteps[${index}].stepNumber" min="1" required/>
+                </label>
+            `;
             container.appendChild(div);
         }
     </script>
@@ -56,7 +75,6 @@
     <h1>Add recipe</h1>
     <form th:action="@{/recipes}" th:object="${recipeForm}" method="post">
 
-        <!-- osnovna polja -->
         <label>Name:
             <input type="text" th:field="*{name}" />
         </label>
@@ -75,29 +93,20 @@
         </label>
 
         <label>Category:
-            <input type="text" th:field="*{category}"/>
+            <select th:field="*{category.id}">
+                <option value="" disabled>Select category</option>
+                <option th:each="cat : ${categories}"
+                        th:value="${cat.id}"
+                        th:text="${cat.name}"
+                        th:selected="${cat.id} == ${recipeForm.category.id}">
+                </option>
+            </select>
         </label>
+        <div class="error" th:errors="*{category}"></div>
 
-        <!-- sastojci -->
         <h3>Ingredients</h3>
-        <div id="ingredients-container-create">
-            <!--  Ako forma tek kreirana – prikaži prazan blok za 1. sastojak  -->
-            <div class="ingredient-block" th:if="${#lists.isEmpty(recipeForm.ingredients)}">
-                <button type="button" class="remove-btn" onclick="this.parentElement.remove()">✕</button>
-
-                <label>Name:
-                    <input type="text" name="ingredients[0].name" required/>
-                </label>
-                <label>Quantity:
-                    <input type="number" step="0.01" min="0.01" name="ingredients[0].quantity" required/>
-                </label>
-                <label>Unit:
-                    <input type="text" name="ingredients[0].unit" required/>
-                </label>
-            </div>
-
-            <!--  Ako smo se vratili sa greškom ili editujemo – prikaži postojeće sastojke  -->
-            <div th:each="ing,stat : *{ingredients}" class="ingredient-block" th:unless="${#lists.isEmpty(recipeForm.ingredients)}">
+        <div class="ingredients-container">
+            <div th:each="ing,stat : *{ingredients}" class="ingredient-block">
                 <button type="button" class="remove-btn" onclick="this.parentElement.remove()">✕</button>
 
                 <label>Name:
@@ -111,8 +120,37 @@
                 </label>
             </div>
         </div>
-
         <button type="button" class="add-btn" onclick="addIngredient()">+ Add ingredient</button>
+
+        <h3>Tags</h3>
+        <div>
+            <p>Odaberite tagove:</p>
+            <div th:each="tag : ${tagsList}">
+                <label>
+                    <input type="checkbox"
+                           th:value="${tag.id}"
+                           th:name="tags"
+                           th:checked="${#lists.contains(recipeForm.tags, tag)}" />
+                    <span th:text="${tag.name}"></span>
+                </label>
+            </div>
+        </div>
+
+        <h3>Instruction Steps</h3>
+        <div class="steps-container">
+            <div th:each="step,stat : *{instructionSteps}" class="step-block">
+                <button type="button" class="remove-btn" onclick="this.parentElement.remove()">✕</button>
+                <label>Step description:
+                    <textarea th:name="${'instructionSteps[' + stat.index + '].description'}" required
+                              th:text="${step.description}"></textarea>
+                </label>
+                <label>Step order:
+                    <input type="number" th:name="${'instructionSteps[' + stat.index + '].stepNumber'}"
+                           th:value="${step.stepNumber}" min="1" required/>
+                </label>
+            </div>
+        </div>
+        <button type="button" class="add-btn" onclick="addStep()">+ Add step</button>
 
         <button type="submit" class="save-btn">Save</button>
     </form>
@@ -141,11 +179,19 @@
         </label>
 
         <label>Category:
-            <input type="text" th:field="*{category}"/>
+            <select th:field="*{category.id}">
+                <option value="" disabled>Select category</option>
+                <option th:each="cat : ${categories}"
+                        th:value="${cat.id}"
+                        th:text="${cat.name}"
+                        th:selected="${cat.id} == ${recipeForm.category.id}">
+                </option>
+            </select>
         </label>
+        <div class="error" th:errors="*{category}"></div>
 
         <h3>Ingredients</h3>
-        <div id="ingredients-container-edit">
+        <div class="ingredients-container">
             <div th:each="ing,stat : *{ingredients}" class="ingredient-block">
                 <button type="button" class="remove-btn" onclick="this.parentElement.remove()">✕</button>
 
@@ -160,8 +206,36 @@
                 </label>
             </div>
         </div>
-
         <button type="button" class="add-btn" onclick="addIngredient()">+ Add ingredient</button>
+
+        <div>
+            <p>Odaberite tagove:</p>
+            <div th:each="tag : ${tagsList}">
+                <label>
+                    <input type="checkbox"
+                           th:value="${tag.id}"
+                           th:name="tags"
+                           th:checked="${#lists.contains(recipeForm.tags, tag)}" />
+                    <span th:text="${tag.name}"></span>
+                </label>
+            </div>
+        </div>
+
+        <h3>Instruction Steps</h3>
+        <div class="steps-container">
+            <div th:each="step,stat : *{instructionSteps}" class="step-block">
+                <button type="button" class="remove-btn" onclick="this.parentElement.remove()">✕</button>
+                <label>Step description:
+                    <textarea th:name="${'instructionSteps[' + stat.index + '].description'}" required
+                              th:text="${step.description}"></textarea>
+                </label>
+                <label>Step order:
+                    <input type="number" th:name="${'instructionSteps[' + stat.index + '].stepNumber'}"
+                           th:value="${step.stepNumber}" min="1" required/>
+                </label>
+            </div>
+        </div>
+        <button type="button" class="add-btn" onclick="addStep()">+ Add step</button>
 
         <button type="submit" class="save-btn">Save</button>
     </form>

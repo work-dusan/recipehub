@@ -19,6 +19,7 @@
         th, td {
             padding: 12px;
             border-bottom: 1px solid #ccc;
+            vertical-align: top;
         }
 
         th {
@@ -36,6 +37,16 @@
         a.button:hover {
             background-color: #434190;
         }
+
+        .tag {
+            display: inline-block;
+            background-color: #cbd5e1;
+            color: #1e293b;
+            padding: 2px 8px;
+            margin: 2px;
+            border-radius: 12px;
+            font-size: 0.9rem;
+        }
     </style>
 </head>
 <body>
@@ -44,29 +55,44 @@
 
 <a class="button" href="/recipes/new">Add New Recipe</a>
 
+<br><br>
+
 <form th:action="@{/recipes}" method="get" style="margin-bottom: 1.5rem;">
     <input type="text" name="q" th:value="${keyword}" placeholder="Search by name or category..."
            style="padding: 6px 10px; width: 250px;"/>
     <button type="submit" style="padding: 6px 12px;">Search</button>
 </form>
 
-
 <table>
     <thead>
     <tr>
         <th>Name</th>
         <th>Category</th>
+        <th>Tags</th>
         <th>Prep Time</th>
         <th>Servings</th>
+        <th>Steps</th>
         <th>Actions</th>
     </tr>
     </thead>
     <tbody>
     <tr th:each="recipe : ${recipes}">
         <td th:text="${recipe.name}">Recipe name</td>
-        <td th:text="${recipe.category}">Category</td>
+
+        <!-- Prikaz imena kategorije -->
+        <td th:text="${recipe.category.name}">Category</td>
+
+        <!-- Prikaz tagova -->
+        <td>
+            <span th:each="tag : ${recipe.tags}" th:text="${tag.name}" class="tag"></span>
+        </td>
+
         <td th:text="${recipe.prepTimeMinutes + ' min'}">30 min</td>
         <td th:text="${recipe.servings}">4</td>
+
+        <!-- Prikaz broja koraka u receptu -->
+        <td th:text="${#lists.size(recipe.instructionSteps)}">0</td>
+
         <td>
             <a th:href="@{'/recipes/' + ${recipe.id}}" class="button">View</a>
             <a th:href="@{'/recipes/' + ${recipe.id} + '/edit'}" class="button" style="background-color: #4caf50;">Edit</a>

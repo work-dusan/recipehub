@@ -25,13 +25,17 @@ public class Recipe {
     private int servings;
 
     @NotBlank
-    private String category; // npr. "Desert", "Glavno jelo"
+    private Category category; // npr. "Desert", "Glavno jelo"
 
     @NotNull
     @Size(min = 1, message = "Recipe must have at least one ingredient")
     private List<Ingredient> ingredients;
 
-    private boolean archived; // "obrisan" flag
+    private List<Tag> tags; // Dodatak: oznake poput "bez glutena", "brzo", itd.
+
+    private List<InstructionStep> instructionSteps; // Dodatak: koraci pripreme
+
+    private boolean archived;
 
     public static Recipe createWithId(Recipe recipeWithoutId) {
         return Recipe.builder()
@@ -42,6 +46,8 @@ public class Recipe {
                 .servings(recipeWithoutId.getServings())
                 .category(recipeWithoutId.getCategory())
                 .ingredients(recipeWithoutId.getIngredients())
+                .tags(recipeWithoutId.getTags())
+                .instructionSteps(recipeWithoutId.getInstructionSteps())
                 .archived(false)
                 .build();
     }

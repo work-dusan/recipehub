@@ -1,8 +1,12 @@
 package com.dusan.recipehub.controller;
 
 import com.dusan.recipehub.dto.RecipeFormDto;
+import com.dusan.recipehub.model.Category;
 import com.dusan.recipehub.model.Recipe;
+import com.dusan.recipehub.model.Tag;
+import com.dusan.recipehub.repository.CategoryRepository;
 import com.dusan.recipehub.repository.RecipeRepository;
+import com.dusan.recipehub.repository.TagRepository;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -16,16 +20,45 @@ import java.util.List;
 public class RecipeController {
 
     private final RecipeRepository recipeRepository;
+    private final CategoryRepository categoryRepository;
+    private final TagRepository tagRepository;
 
     @Autowired
-    public RecipeController(RecipeRepository recipeRepository) {
+    public RecipeController(RecipeRepository recipeRepository, CategoryRepository categoryRepository, TagRepository tagRepository) {
         this.recipeRepository = recipeRepository;
+        this.categoryRepository = categoryRepository;
+        this.tagRepository = tagRepository;
     }
 
     @GetMapping("/recipes/new")
     public String showCreateForm(Model model) {
         model.addAttribute("recipeForm", new RecipeFormDto());
+        model.addAttribute("categories", categoryRepository.findAll());
+        model.addAttribute("tagsList", tagRepository.findAll());
         return "recipe-form";
+    }
+
+    @GetMapping("/recipes/{id}/edit")
+    public String showEditForm(@PathVariable String id, Model model) {
+        return recipeRepository.findById(id)
+                .map(recipe -> {
+                    RecipeFormDto dto = new RecipeFormDto(
+                            recipe.getName(),
+                            recipe.getDescription(),
+                            recipe.getPrepTimeMinutes(),
+                            recipe.getServings(),
+                            recipe.getCategory(),
+                            recipe.getIngredients(),
+                            recipe.getTags(),
+                            recipe.getInstructionSteps()
+                    );
+                    model.addAttribute("recipeForm", dto);
+                    model.addAttribute("recipeId", id);
+                    model.addAttribute("categories", categoryRepository.findAll());
+                    model.addAttribute("tagsList", tagRepository.findAll());
+                    return "recipe-form";
+                })
+                .orElse("redirect:/recipes");
     }
 
     @PostMapping("/recipes")
@@ -33,8 +66,16 @@ public class RecipeController {
                              BindingResult result,
                              Model model) {
         if (result.hasErrors()) {
+            model.addAttribute("categories", categoryRepository.findAll());
+            model.addAttribute("tagsList", tagRepository.findAll());
             return "recipe-form";
         }
+
+        Category selectedCategory = categoryRepository.findById(form.getCategory().getId());
+
+        List<Tag> selectedTags = form.getTags().stream()
+                .map(tag -> tagRepository.findById(tag.getId()))
+                .toList();
 
         Recipe newRecipe = Recipe.createWithId(
                 Recipe.builder()
@@ -42,8 +83,10 @@ public class RecipeController {
                         .description(form.getDescription())
                         .prepTimeMinutes(form.getPrepTimeMinutes())
                         .servings(form.getServings())
-                        .category(form.getCategory())
+                        .category(selectedCategory)
                         .ingredients(form.getIngredients())
+                        .tags(selectedTags)
+                        .instructionSteps(form.getInstructionSteps())
                         .build()
         );
 
@@ -61,35 +104,20 @@ public class RecipeController {
                 .orElse("redirect:/recipes");
     }
 
-    @GetMapping("/recipes/{id}/edit")
-    public String showEditForm(@PathVariable String id, Model model) {
-        return recipeRepository.findById(id)
-                .map(recipe -> {
-                    // Pripremamo DTO na osnovu postojeće instance
-                    RecipeFormDto dto = new RecipeFormDto(
-                            recipe.getName(),
-                            recipe.getDescription(),
-                            recipe.getPrepTimeMinutes(),
-                            recipe.getServings(),
-                            recipe.getCategory(),
-                            recipe.getIngredients()
-                    );
-                    model.addAttribute("recipeForm", dto);
-                    model.addAttribute("recipeId", id);
-                    return "recipe-form";
-                })
-                .orElse("redirect:/recipes");
-    }
-
     @PostMapping("/recipes/{id}/edit")
     public String updateRecipe(@PathVariable String id,
                                @Valid @ModelAttribute("recipeForm") RecipeFormDto form,
                                BindingResult result,
                                Model model) {
         if (result.hasErrors()) {
+            System.out.println("Validation errors: " + result.getAllErrors());
             model.addAttribute("recipeId", id);
+            model.addAttribute("categories", categoryRepository.findAll());
+            model.addAttribute("tagsList", tagRepository.findAll());
             return "recipe-form";
         }
+
+        Category selectedCategory = categoryRepository.findById(form.getCategory().getId());
 
         Recipe updated = Recipe.builder()
                 .id(id)
@@ -97,8 +125,10 @@ public class RecipeController {
                 .description(form.getDescription())
                 .prepTimeMinutes(form.getPrepTimeMinutes())
                 .servings(form.getServings())
-                .category(form.getCategory())
+                .category(selectedCategory)
                 .ingredients(form.getIngredients())
+                .tags(form.getTags())
+                .instructionSteps(form.getInstructionSteps())
                 .archived(false)
                 .build();
 
